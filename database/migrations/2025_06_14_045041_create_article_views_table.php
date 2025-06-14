@@ -12,16 +12,18 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('article_views', function (Blueprint $table) {
-            Schema::create('article_views', function (Blueprint $table) {
-                $table->id();
-                $table->foreignId('article_id')->constrained()->onDelete('cascade');
-                $table->string('ip_address', 45);
-                $table->text('user_agent')->nullable();
-                $table->foreignId('user_id')->nullable()->constrained()->onDelete('set null');
-                $table->timestamp('viewed_at')->useCurrent();
-    
-                $table->index(['article_id', 'ip_address', 'user_id', 'viewed_at']);
-            });
+            $table->id();
+            $table->foreignId('article_id')->constrained()->onDelete('cascade');
+            $table->string('ip_address', 45);
+            $table->text('user_agent')->nullable();
+            $table->foreignId('user_id')->nullable()->constrained()->onDelete('set null');
+            $table->softDeletes();
+            $table->timestamp('viewed_at')->useCurrent();
+
+            $table->index(
+                ['article_id', 'ip_address', 'user_id', 'viewed_at'],
+                'article_views_main_index'
+            );
         });
     }
 

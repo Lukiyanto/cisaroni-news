@@ -22,6 +22,7 @@ return new class extends Migration
             $table->enum('status', ['pending', 'approved', 'rejected', 'spam'])->default('pending');
             $table->string('ip_address', 45)->nullable();
             $table->text('user_agent')->nullable();
+            $table->softDeletes();
             $table->timestamps();
 
             $table->index(['article_id', 'user_id', 'parent_id', 'status', 'created_at']);

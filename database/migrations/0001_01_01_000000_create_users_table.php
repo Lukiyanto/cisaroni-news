@@ -22,6 +22,7 @@ return new class extends Migration
             $table->text('bio')->nullable();
             $table->enum('status', ['active', 'inactive'])->default('active');
             $table->rememberToken();
+            $table->softDeletes();
             $table->timestamps();
 
             $table->index(['email', 'role', 'status']);

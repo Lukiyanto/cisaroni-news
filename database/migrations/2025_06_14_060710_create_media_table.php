@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('alt_text')->nullable();
             $table->text('caption')->nullable();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->softDeletes();
             $table->timestamps();
         });
     }

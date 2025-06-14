@@ -23,6 +23,7 @@ return new class extends Migration
             $table->boolean('is_active')->default(true);
             $table->string('meta_title')->nullable();
             $table->text('meta_description')->nullable();
+            $table->softDeletes();
             $table->timestamps();
 
             $table->index(['slug', 'parent_id', 'is_active', 'sort_order']);

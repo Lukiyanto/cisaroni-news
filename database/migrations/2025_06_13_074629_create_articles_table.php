@@ -32,9 +32,13 @@ return new class extends Migration
             $table->string('meta_title')->nullable();
             $table->text('meta_description')->nullable();
             $table->text('meta_keywords')->nullable();
+            $table->softDeletes();
             $table->timestamps();
 
-            $table->index(['slug', 'user_id', 'category_id', 'status', 'is_featured', 'is_breaking', 'published_at', 'views_count']);
+            $table->index(
+                ['slug', 'user_id', 'category_id', 'status', 'is_featured', 'is_breaking', 'published_at', 'views_count'],
+                'article_main_index' // Nama custom yang pendek
+            );
             $table->fullText(['title', 'excerpt', 'content']);
         });
     }

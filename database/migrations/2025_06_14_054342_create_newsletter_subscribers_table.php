@@ -20,6 +20,7 @@ return new class extends Migration
             $table->timestamp('verified_at')->nullable();
             $table->timestamp('subscribed_at')->useCurrent();
             $table->timestamp('unsubscribed_at')->nullable();
+            $table->softDeletes();
 
             $table->index(['email', 'status', 'subscribed_at']);
         });
