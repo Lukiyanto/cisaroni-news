@@ -192,8 +192,7 @@ class CategoryResource extends Resource
     public static function getRelations(): array
     {
         return [
-            // Uncomment jika ada relasi yang ingin ditampilkan
-            // RelationManagers\PostsRelationManager::class,
+            // 
         ];
     }
 
