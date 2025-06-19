@@ -6,11 +6,15 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use RalphJSmit\Laravel\SEO\Support\HasSEO;
+use RalphJSmit\Laravel\SEO\Support\SEOData;
 
-class Article extends Model
+class Article extends Model implements HasMedia
 {
     // Use the HasFactory trait for factory support
-    use HasFactory;
+    use HasFactory, InteractsWithMedia, HasSEO;
 
     protected $fillabel = [
         'title',
@@ -141,5 +145,13 @@ class Article extends Model
 
             $this->increment('views_count');
         }
+    }
+
+    public function getDynamicSEOData(): SEOData
+    {
+        return new SEOData(
+            title: $this->title,
+            description: $this->excerpt,
+        );
     }
 }

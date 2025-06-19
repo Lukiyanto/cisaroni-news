@@ -23,6 +23,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Str;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 
 class ArticleResource extends Resource
 {
@@ -77,20 +78,28 @@ class ArticleResource extends Resource
 
                 Section::make('Media')
                     ->schema([
-                        FileUpload::make('featured_image')
-                            ->image()
-                            ->directory('articles')
-                            ->imageEditor(),
+                        SpatieMediaLibraryFileUpload::make('featured_image')
+                            ->collection('featured_images')
+                            ->responsiveImages() // Aktifkan gambar responsif
+                            ->imageEditor() // Aktifkan editor gambar
+                            ->downloadable() // Izinkan download
+                            ->openable() // Izinkan preview
+                            ->label('Gambar Utama')
+                            ->helperText('Ukuran disarankan: 1200x630 piksel')
+                            ->required(),
 
                         TextInput::make('featured_image_alt')
-                            ->maxLength(255),
+                            ->label('Teks Alternatif Gambar')
+                            ->maxLength(255)
+                            ->required(),
                     ])->columns(2),
 
                 Section::make('Kategori & Tag')
                     ->schema([
-                        Select::make('categori_id')
+                        Select::make('category_id')
                             ->label('Kategori')
-                            ->option(Category::all()->pluck('name', 'id'))
+                            ->relationship('category', 'name')
+                            ->preload()
                             ->searchable()
                             ->required(),
 
@@ -116,18 +125,22 @@ class ArticleResource extends Resource
                             ])
                             ->default('draft')
                             ->required(),
+
                         DateTimePicker::make('published_at')
                             ->label('Tanggal Publikasi')
                             ->required()
                             ->native(false),
+
                         Toggle::make('is_featured')
                             ->label('Tampilkan di Halaman Utama')
                             ->default(false)
                             ->inline(),
+
                         Toggle::make('is_breaking')
                             ->label('Berita Terkini')
                             ->default(false)
                             ->inline(),
+
                         TextInput::make('reading_time')
                             ->label('Waktu Membaca (menit)')
                             ->numeric()
@@ -159,38 +172,53 @@ class ArticleResource extends Resource
         return $table
             ->columns([
                 //
+                Tables\Columns\ImageColumn::make('featured_image')
+                    ->label('Gambar Utama')
+                    ->collection('featured_images')
+                    ->square(),
+
                 Tables\Columns\TextColumn::make('title')
                     ->label('Judul Artikel')
                     ->searchable()
                     ->limit(50),
-                Tables\Columns\TextColumn::make('categori.name')
+
+                Tables\Columns\TextColumn::make('category.name')
                     ->label('Kategori')
                     ->sortable(),
+
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->color(fn(string $state): string => match ($state) {
                         'draft' => 'gray',
-                        'published' => 'green',
-                        'scheduled' => 'blue',
-                        'archived' => 'red',
+                        'published' => 'success',
+                        'scheduled' => 'info',
+                        'archived' => 'danger',
                     }),
+
                 Tables\Columns\TextColumn::make('is_featured')
+                    ->label('Featured')
                     ->boolean()
                     ->sortable(),
+
                 Tables\Columns\TextColumn::make('is_breaking')
+                    ->label('Breaking')
                     ->boolean()
                     ->sortable(),
+
                 Tables\Columns\TextColumn::make('published_at')
                     ->label('Tanggal Publikasi')
                     ->dateTime()
                     ->sortable(),
+
                 Tables\Columns\TextColumn::make('views_count')
+                    ->label('Dilihat')
                     ->numeric()
                     ->sortable(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('category')
                     ->relationship('category', 'name'),
+
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
                         'draft' => 'Draft',
@@ -198,12 +226,15 @@ class ArticleResource extends Resource
                         'scheduled' => 'Dijadwalkan',
                         'archived' => 'Diarsipkan',
                     ]),
+
                 Tables\Filters\SelectFilter::make('is_featured')
                     ->query(fn(Builder $query, $value) => $query->where('is_featured', $value))
                     ->label('Featured Only'),
+
                 Tables\Filters\SelectFilter::make('is_breaking')
                     ->query(fn(Builder $query, $value) => $query->where('is_breaking', $value))
                     ->label('Breaking News Only'),
+
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
