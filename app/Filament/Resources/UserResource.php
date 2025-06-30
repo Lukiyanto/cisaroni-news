@@ -16,23 +16,17 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 
 class UserResource extends Resource
 {
     protected static ?string $model = User::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-users';
-
-    protected static ?string $modelLabel = 'Pengguna';
-
-    protected static ?string $pluralModelLabel = 'Pengguna';
-
-    protected static ?string $navigationGroup = 'Pengaturan';
-
-    protected static ?int $navigationSort = 1;
-
     public static function form(Form $form): Form
     {
+        $user = Auth::user();
+
         return $form
             ->schema([
                 Section::make('Informasi Pengguna')
@@ -72,6 +66,7 @@ class UserResource extends Resource
                                 'editor' => 'Editor',
                                 'author' => 'Author',
                             ])
+                            ->disabled(fn(): bool => $user->role !== 'admin')
                             ->required()
                             ->native(false),
 
@@ -145,7 +140,20 @@ class UserResource extends Resource
 
     public static function table(Table $table): Table
     {
+        $user = Auth::user();
+
         return $table
+            ->modifyQueryUsing(function (Builder $query) use ($user) {
+                if ($user?->role === 'author') {
+                    return $query->where('id', $user->id);
+                }
+
+                if ($user?->role === 'editor') {
+                    return $query->where('role', '!=', 'admin');
+                }
+
+                return $query;
+            })
             ->columns([
                 Tables\Columns\ImageColumn::make('avatar')
                     ->label('Avatar')
@@ -241,11 +249,14 @@ class UserResource extends Resource
             ->actions([
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\ViewAction::make()
-                        ->label('Lihat'),
+                        ->label('Lihat')
+                        ->hidden(fn(User $record): bool => !Gate::allows('view', $record)),
                     Tables\Actions\EditAction::make()
-                        ->label('Edit'),
+                        ->label('Edit')
+                        ->hidden(fn(User $record): bool => !Gate::allows('update', $record)),
                     Tables\Actions\DeleteAction::make()
-                        ->label('Hapus'),
+                        ->label('Hapus')
+                        ->hidden(fn(User $record): bool => !Gate::allows('delete', $record)),
                 ])
                     ->icon('heroicon-m-ellipsis-vertical')
                     ->size('sm')
@@ -255,11 +266,8 @@ class UserResource extends Resource
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make()
-                        ->label('Hapus Terpilih'),
-                    Tables\Actions\ForceDeleteBulkAction::make()
-                        ->label('Hapus Permanen'),
-                    Tables\Actions\RestoreBulkAction::make()
-                        ->label('Pulihkan'),
+                        ->label('Hapus Terpilih')
+                        ->hidden(fn(): bool => !Gate::allows('deleteAny', User::class)),
                 ])
                     ->label('Aksi Massal'),
             ])
