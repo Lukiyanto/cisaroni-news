@@ -2,8 +2,9 @@
 
 namespace App\Providers\Filament;
 
+use App\Http\Middleware\CheckAdminRole;
+use App\Filament\Resources\Navigation;
 use Filament\Http\Middleware\Authenticate;
-use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -53,26 +54,15 @@ class AdminPanelProvider extends PanelProvider
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
             ])
-            ->plugins([
-                FilamentShieldPlugin::make(),
-            ])
             ->authMiddleware([
                 Authenticate::class,
+                CheckAdminRole::class,
             ])
-
-            ->navigationGroups([
-                NavigationGroup::make()
-                    ->label('Konten')
-                    ->collapsed(false),
-                NavigationGroup::make()
-                    ->label('Pengaturan')
-                    ->collapsed(false),
-            ])
-
+            ->navigation(function () {
+                return Navigation::main();
+            })
             ->databaseNotifications()
             ->databaseNotificationsPolling('30s')
-
-            // mengaktifkan SPA (Single Page Application) mode
-            ->spa();
+            ->spa(); // mengaktifkan SPA (Single Page Application) mode
     }
 }
