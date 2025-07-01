@@ -25,6 +25,15 @@ class Navigation
                 ->isActiveWhen(fn(): bool => request()->reouteIs('filament.admin.pages.dashboard')),
         ];
 
+        // Menu Konten
+        $contentItems = [];
+
+        // Artikel - tersedia untuk semua role
+        $contentItems[] = NavigationItem::make('Artikel')
+            ->icon('heroicon-o-newspaper')
+            ->url(ArticleResource::getUrl())
+            ->isActiveWhen(fn(): bool => request()->routeIs('filament.admin.resources.articles.*'));
+
         // Menu Pengaturan
         $settingItems = [];
 
@@ -36,8 +45,12 @@ class Navigation
                 ->isActiveWhen(fn(): bool => request()->routeIs('filament.admin.resources.users.*'));
         }
 
-        // Gabungkan menu
+        // Gabungkan semua menu
         $groups = [
+            NavigationGroup::make('Konten')
+                ->items($contentItems)
+                ->collapsed(false),
+
             NavigationGroup::make('Pengaturan')
                 ->items($settingItems)
                 ->collapsed(false),

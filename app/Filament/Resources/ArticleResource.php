@@ -23,24 +23,17 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 
 class ArticleResource extends Resource
 {
     protected static ?string $model = Article::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-newspaper';
-
-    protected static ?string $modelLabel = 'Artikel';
-
-    protected static ?string $pluralModelLabel = 'Artikel';
-
-    protected static ?string $navigationGroup = 'Konten';
-
-    protected static ?int $navigationSort = 3;
-
     public static function form(Form $form): Form
     {
+        $user = Auth::user();
+
         return $form
             ->schema([
                 //
@@ -61,6 +54,13 @@ class ArticleResource extends Resource
                             ->placeholder('Masukkan slug artikel')
                             ->unique(Article::class, 'slug', ignoreRecord: true)
                             ->disabled(),
+
+                        Select::make('author_id')
+                            ->label('Penulis')
+                            ->relationship('author', 'name')
+                            ->default($user->id)
+                            ->disabled(fn(): bool => $user->role !== 'admin')
+                            ->required(),
 
                         RichEditor::make('content')
                             ->label('Konten Artikel')
@@ -169,7 +169,12 @@ class ArticleResource extends Resource
 
     public static function table(Table $table): Table
     {
+        $user = Auth::user();
+
         return $table
+            ->modifyQueryUsing(fn(Builder $query) => $user->role === 'author'
+                ? $query->where('author_id', $user->id)
+                : $query)
             ->columns([
                 //
                 Tables\Columns\ImageColumn::make('featured_image')
@@ -240,14 +245,20 @@ class ArticleResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                    Tables\Actions\ForceDeleteBulkAction::make(),
-                    Tables\Actions\RestoreBulkAction::make(),
-                ]),
-            ]);
+            ->bulkActions(
+                $user->role === 'admin' ? [
+                    Tables\Actions\BulkActionGroup::make([
+                        Tables\Actions\DeleteBulkAction::make(),
+                        Tables\Actions\ForceDeleteBulkAction::make(),
+                        Tables\Actions\RestoreBulkAction::make(),
+                    ])
+                ] : []
+            )
+            ->checkIfRecordIsSelectableUsing(
+                fn(Article $record): bool => $user->role !== 'author' || $record->author_id === $user->id
+            );
     }
 
     public static function getRelations(): array
