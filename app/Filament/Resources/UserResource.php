@@ -145,7 +145,7 @@ class UserResource extends Resource
         return $table
             ->modifyQueryUsing(function (Builder $query) use ($user) {
                 if ($user?->role === 'author') {
-                    return $query->where('id', $user->id);
+                    return $query->where('author_id', $user->id);
                 }
 
                 if ($user?->role === 'editor') {
@@ -267,13 +267,14 @@ class UserResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make()
                         ->label('Hapus Terpilih')
-                        ->hidden(fn(): bool => !Gate::allows('deleteAny', User::class)),
+                        ->hidden(fn(): bool => !Gate::allows('delete', User::class)),
                 ])
                     ->label('Aksi Massal'),
             ])
             ->emptyStateActions([
                 Tables\Actions\CreateAction::make()
-                    ->label('Tambah Pengguna Pertama'),
+                    ->label('Tambah Pengguna Pertama')
+                    ->hidden(fn(): bool => !Gate::allows('create', User::class)),
             ])
             ->defaultSort('created_at', 'desc')
             ->striped()
