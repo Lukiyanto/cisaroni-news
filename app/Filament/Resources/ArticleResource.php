@@ -24,6 +24,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 
 class ArticleResource extends Resource
@@ -55,9 +56,9 @@ class ArticleResource extends Resource
                             ->unique(Article::class, 'slug', ignoreRecord: true)
                             ->disabled(),
 
-                        Select::make('author_id')
+                        Select::make('user_id')
                             ->label('Penulis')
-                            ->relationship('author', 'name')
+                            ->relationship('user', 'name')
                             ->default($user->id)
                             ->disabled(fn(): bool => $user->role !== 'admin')
                             ->required(),
@@ -173,7 +174,7 @@ class ArticleResource extends Resource
 
         return $table
             ->modifyQueryUsing(fn(Builder $query) => $user->role === 'author'
-                ? $query->where('author_id', $user->id)
+                ? $query->where('user_id', $user->id)
                 : $query)
             ->columns([
                 //
@@ -243,22 +244,26 @@ class ArticleResource extends Resource
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->label('Lihat')
+                    ->hidden(fn(Article $record): bool => !Gate::allows('view', $record)),
+                Tables\Actions\EditAction::make()
+                    ->label('Edit')
+                    ->hidden(fn(Article $record): bool => !Gate::allows('update', $record)),
+                Tables\Actions\DeleteAction::make()
+                    ->label('Hapus')
+                    ->hidden(fn(Article $record): bool => !Gate::allows('delete', $record)),
             ])
-            ->bulkActions(
-                $user->role === 'admin' ? [
-                    Tables\Actions\BulkActionGroup::make([
-                        Tables\Actions\DeleteBulkAction::make(),
-                        Tables\Actions\ForceDeleteBulkAction::make(),
-                        Tables\Actions\RestoreBulkAction::make(),
-                    ])
-                ] : []
-            )
-            ->checkIfRecordIsSelectableUsing(
-                fn(Article $record): bool => $user->role !== 'author' || $record->author_id === $user->id
-            );
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->hidden(fn(): bool => !Gate::allows('deleteAny', Article::class)),
+                    Tables\Actions\ForceDeleteBulkAction::make()
+                        ->hidden(fn(): bool => !Gate::allows('forceDelete', Article::class)),
+                    Tables\Actions\RestoreBulkAction::make()
+                        ->hidden(fn(): bool => !Gate::allows('restore', Article::class)),
+                ])
+            ]);
     }
 
     public static function getRelations(): array

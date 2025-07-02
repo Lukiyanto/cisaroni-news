@@ -23,9 +23,9 @@ class ArticlePolicy
      */
     public function view(User $user, Article $article)
     {
-        return $user->role === 'admin'
-            || $user->role === 'editor'
-            || $article->author_id === $user->id;
+        return $user->isAdmin()
+            || $user->isEditor()
+            || $article->user_id === $user->id;
     }
 
     /**
@@ -41,9 +41,9 @@ class ArticlePolicy
      */
     public function update(User $user, Article $article)
     {
-        return $user->role === 'admin'
-            || $user->role === 'editor'
-            || $article->author_id === $user->id;
+        return $user->isAdmin()
+            || $user->isEditor()
+            || $article->user_id === $user->id;
     }
 
     /**
@@ -51,8 +51,14 @@ class ArticlePolicy
      */
     public function delete(User $user, Article $article)
     {
-        return $user->role === 'admin'
-            || ($user->role === 'editor' && $article->author_id !== $user->id);
+        return $user->isAdmin()
+            || ($user->isEditor() && $article->user_id === $user->id) // Editor dapat menghapus artikel miliknya sendiri, jika ingin Editor dapat menghapus artikel orang lain kecuali miliknya gunakan (!==)
+            || $article->user_id === $user->id; // Author dapat menghapus artikel miliknya sendiri
+    }
+
+    public function deleteAny(User $user, Article $article)
+    {
+        return $user->isAdmin();
     }
 
     /**
@@ -60,7 +66,7 @@ class ArticlePolicy
      */
     public function restore(User $user, Article $article)
     {
-        return $user->role === 'admin';
+        return $user->isAdmin();
     }
 
     /**
@@ -68,6 +74,6 @@ class ArticlePolicy
      */
     public function forceDelete(User $user, Article $article)
     {
-        return $user->role === 'admin';
+        return $user->isAdmin();
     }
 }
