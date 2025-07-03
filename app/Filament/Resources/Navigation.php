@@ -34,6 +34,15 @@ class Navigation
             ->url(ArticleResource::getUrl())
             ->isActiveWhen(fn(): bool => request()->routeIs('filament.admin.resources.articles.*'));
 
+        // Konten - hanya admin dan editor
+        if (in_array($user->role, ['admin', 'editor'])) {
+            // Kategori
+            $contentItems[] = NavigationItem::make('Kategori')
+                ->icon('heroicon-o-tag')
+                ->url(CategoryResource::getUrl())
+                ->isActiveWhen(fn(): bool => request()->routeIs('filament.admin.resources.categories.*'));
+        }
+
         // Menu Pengaturan
         $settingItems = [];
 

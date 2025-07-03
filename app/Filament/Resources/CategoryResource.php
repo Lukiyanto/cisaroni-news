@@ -13,20 +13,12 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 
 class CategoryResource extends Resource
 {
     protected static ?string $model = Category::class;
-
-    protected static ?string $navigationIcon = 'heroicon-o-tag';
-
-    protected static ?string $modelLabel = 'Kategori';
-
-    protected static ?string $pluralModelLabel = 'Kategori';
-
-    protected static ?string $navigationGroup = 'Konten';
-
-    protected static ?int $navigationSort = 2;
 
     public static function form(Form $form): Form
     {
@@ -106,6 +98,8 @@ class CategoryResource extends Resource
 
     public static function table(Table $table): Table
     {
+        $user = Auth::user();
+
         return $table
             ->columns([
                 Tables\Columns\ImageColumn::make('image')
@@ -174,18 +168,36 @@ class CategoryResource extends Resource
                     ->placeholder('Semua Status'),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
-                Tables\Actions\RestoreAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->label('Lihat')
+                    ->hidden(fn(Category $record): bool => !Gate::allows('view', $record)),
+                Tables\Actions\EditAction::make()
+                    ->label('Edit')
+                    ->hidden(fn(Category $record): bool => !Gate::allows('update', $record)),
+                Tables\Actions\DeleteAction::make()
+                    ->label('Hapus')
+                    ->hidden(fn(Category $record): bool => !Gate::allows('delete', $record)),
+                Tables\Actions\RestoreAction::make()
+                    ->label('Pulihkan')
+                    ->hidden(fn(Category $record): bool => !Gate::allows('restore', $record)),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->label('Hapus')
+                        ->hidden(fn(): bool => !Gate::allows('delete', Category::class)),
+                    Tables\Actions\ForceDeleteBulkAction::make()
+                        ->label('Hapus Permanen')
+                        ->hidden(fn(): bool => !Gate::allows('forceDelete', Category::class)),
+                    Tables\Actions\RestoreBulkAction::make()
+                        ->label('Pulihkan')
+                        ->hidden(fn(): bool => !Gate::allows('restore', Category::class)),
                 ]),
             ])
             ->emptyStateActions([
-                Tables\Actions\CreateAction::make(),
+                Tables\Actions\CreateAction::make()
+                    ->label('Tambah Kategori')
+                    ->hidden(fn(): bool => !Gate::allows('create', Category::class)),
             ]);
     }
 
@@ -222,5 +234,10 @@ class CategoryResource extends Resource
     public static function getNavigationBadgeColor(): ?string
     {
         return static::getModel()::count() > 10 ? 'warning' : 'primary';
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return in_array(Auth::user()?->role, ['admin', 'editor']);
     }
 }
