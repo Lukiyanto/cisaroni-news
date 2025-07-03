@@ -263,6 +263,11 @@ class ArticleResource extends Resource
                     Tables\Actions\RestoreBulkAction::make()
                         ->hidden(fn(): bool => !Gate::allows('restore', Article::class)),
                 ])
+            ])
+            ->emptyStateActions([
+                Tables\Actions\CreateAction::make()
+                    ->label('Tambah Artikel')
+                    ->hidden(fn(): bool => !Gate::allows('create', Article::class)),
             ]);
     }
 
