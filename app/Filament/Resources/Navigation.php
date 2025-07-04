@@ -41,6 +41,12 @@ class Navigation
                 ->icon('heroicon-o-tag')
                 ->url(CategoryResource::getUrl())
                 ->isActiveWhen(fn(): bool => request()->routeIs('filament.admin.resources.categories.*'));
+
+            // Tag
+            $contentItems[] = NavigationItem::make('Tag')
+                ->icon('heroicon-o-hashtag')
+                ->url(TagResource::getUrl())
+                ->isActiveWhen(fn(): bool => request()->routeIs('filament.admin.resources.tags.*'));
         }
 
         // Menu Pengaturan

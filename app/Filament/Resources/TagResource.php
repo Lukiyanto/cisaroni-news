@@ -13,20 +13,11 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Gate;
 
 class TagResource extends Resource
 {
     protected static ?string $model = Tag::class;
-
-    protected static ?string $navigationIcon = 'heroicon-o-hashtag';
-
-    protected static ?string $modelLabel = 'Tag';
-
-    protected static ?string $pluralModelLabel = 'Tag';
-
-    protected static ?string $navigationGroup = 'Konten';
-
-    protected static ?int $navigationSort = 4;
 
     public static function form(Form $form): Form
     {
@@ -79,7 +70,7 @@ class TagResource extends Resource
                     ->searchabel(),
                 Tables\Columns\ColorColumn::make('color')
                     ->label('Color'),
-                Tables\Columns\IconColumn::make('is_actice')
+                Tables\Columns\IconColumn::make('is_active')
                     ->label('Active')
                     ->boolean(),
                 Tables\Columns\TextColumn::make('created_at')
@@ -100,15 +91,30 @@ class TagResource extends Resource
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->label('Lihat')
+                    ->hidden(fn(Tag $record): bool => !Gate::allows('view', $record)),
+                Tables\Actions\EditAction::make()
+                    ->label('Edit')
+                    ->hidden(fn(Tag $record): bool => !Gate::allows('update', $record)),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                    Tables\Actions\ForceDeleteBulkAction::make(),
-                    Tables\Actions\RestoreBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->label('Hapus')
+                        ->hidden(fn(): bool => !Gate::allows('delete', Tag::class)),
+                    Tables\Actions\ForceDeleteBulkAction::make()
+                        ->label('Hapus Permanen')
+                        ->hidden(fn(): bool => !Gate::allows('forceDelete', Tag::class)),
+                    Tables\Actions\RestoreBulkAction::make()
+                        ->label('pulihkan')
+                        ->hidden(fn(): bool => !Gate::allows('restore', Tag::class)),
                 ]),
+            ])
+            ->emptyStateActions([
+                Tables\Actions\CreateAction::make()
+                    ->label('Tambah Tag')
+                    ->hidden(fn(): bool => !Gate::allows('create', Tag::class)),
             ]);
     }
 
