@@ -12,21 +12,12 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Gate;
 
 class MediaResource extends Resource
 {
     protected static ?string $model = Media::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-photo';
-
-    protected static ?string $modelLabel = 'Media';
-
-    protected static ?string $pluralModelLabel = 'Media';
-
-    protected static ?string $navigationGroup = 'Konten';
-
-    protected static ?int $navigationSort = 6;
-    
     public static function form(Form $form): Form
     {
         return $form
@@ -91,7 +82,7 @@ class MediaResource extends Resource
                 Tables\Columns\TextColumn::make('size')
                     ->label('Ukuran (bytes)')
                     ->sortable()
-                    ->formatStateUsing(fn (string $state): string => formatBytes($state)),
+                    ->formatStateUsing(fn(string $state): string => formatBytes($state)),
                 Tables\Columns\TextColumn::make('user.name')
                     ->label('Pengunggah')
                     ->searchable()
@@ -105,20 +96,32 @@ class MediaResource extends Resource
             ->filters([
                 //
                 Tables\Filters\SelectFilter::make('mime_type')
-                    ->options(fn () => Media::query()->pluck('mime_type', 'mime_type')->unique())
+                    ->options(fn() => Media::query()->pluck('mime_type', 'mime_type')->unique())
                     ->label('Tipe MIME'),
                 Tables\Filters\Filter::make('images')
-                    ->query(fn (Builder $query): Builder => $query->where('mime_type', 'like', 'image/%'))
+                    ->query(fn(Builder $query): Builder => $query->where('mime_type', 'like', 'image/%'))
                     ->label('Hanya Gambar'),
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->label('Lihat')
+                    ->hidden(fn(Media $record) => !Gate::allows('view', $record)),
+                Tables\Actions\EditAction::make()
+                    ->label('Edit')
+                    ->hidden(fn(Media $record) => !Gate::allows('update', $record)),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->label('Hapus')
+                        ->hidden(fn() => !Gate::allows('delete', Media::class)),
+                    Tables\Actions\ForceDeleteBulkAction::make()
+                        ->label('Hapus Permanen')
+                        ->hidden(fn() => !Gate::allows('forceDelete', Media::class)),
+                    Tables\Actions\RestoreBulkAction::make()
+                        ->label('Pulihkan')
+                        ->hidden(fn() => !Gate::allows('restore', Media::class)),
                 ]),
             ]);
     }
@@ -139,11 +142,20 @@ class MediaResource extends Resource
             'edit' => Pages\EditMedia::route('/{record}/edit'),
         ];
     }
+
+    public static function getElequenQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
+    }
 }
 
 // Helper function to format bytes
 if (!function_exists('formatBytes')) {
-    function formatBytes($bytes, $precision = 2) {
+    function formatBytes($bytes, $precision = 2)
+    {
         $units = ['B', 'KB', 'MB', 'GB', 'TB'];
 
         $bytes = max($bytes, 0);

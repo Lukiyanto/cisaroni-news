@@ -5,11 +5,13 @@ namespace App\Providers;
 use App\Models\Article;
 use App\Models\Category;
 use App\Models\Comment;
+use App\Models\Media;
 use App\Models\Tag;
 use App\Models\User;
 use App\Policies\ArticlePolicy;
 use App\Policies\CategoryPolicy;
 use App\Policies\CommentPolicy;
+use App\Policies\MediaPolicy;
 use App\Policies\TagPolicy;
 use App\Policies\UserPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
@@ -22,6 +24,7 @@ class AuthServiceProvider extends ServiceProvider
         Category::class => CategoryPolicy::class,
         Comment::class => CommentPolicy::class,
         Tag::class => TagPolicy::class,
+        Media::class => MediaPolicy::class,
     ];
 
     /**

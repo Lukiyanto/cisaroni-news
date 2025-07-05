@@ -53,10 +53,24 @@ class Navigation
                 ->icon('heroicon-o-chat-bubble-left-ellipsis')
                 ->url(CommentResource::getUrl())
                 ->isActiveWhen(fn(): bool => request()->routeIs('filament.admin.resources.comments.*'));
+
+            // Media
+            $contentItems[] = NavigationItem::make('Media')
+                ->icon('heroicon-o-photo')
+                ->url(MediaResource::getUrl())
+                ->isActiveWhen(fn(): bool => request()->routeIs('filament.admin.resources.media.*'));
         }
 
         // Menu Pengaturan
         $settingItems = [];
+
+        // Newslettter - admin dan editor
+        if (in_array($user->role, ['admin', 'editor'])) {
+            $settingItems[] = NavigationItem::make('Subsciber Newsletter')
+                ->icon('heroicon-o-envelope')
+                ->url(NewsletterSubscriberResource::getUrl())
+                ->isActiveWhen(fn(): bool => request()->routeIs('filament.admin.resources.newsletter-subscribers.*'));
+        }
 
         // User Management - hanya admin
         if ($user->role === 'admin') {
