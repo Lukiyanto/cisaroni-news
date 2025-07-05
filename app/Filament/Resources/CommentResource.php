@@ -12,20 +12,11 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Gate;
 
 class CommentResource extends Resource
 {
     protected static ?string $model = Comment::class;
-
-    protected static ?string $navigationIcon = 'heroicon-o-chat-bubble-left-ellipsis';
-
-    protected static ?string $modelLabel = 'Komentar';
-
-    protected static ?string $pluralModelLabel = 'Komentar';
-
-    protected static ?string $navigationGroup = 'Konten';
-
-    protected static ?int $navigationSort = 5;
 
     public static function form(Form $form): Form
     {
@@ -125,24 +116,31 @@ class CommentResource extends Resource
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->label('Lihat')
+                    ->hidden(fn(Comment $record): bool => !Gate::allows('view', $record)),
+                Tables\Actions\EditAction::make()
+                    ->label('Edit')
+                    ->hidden(fn(Comment $record): bool => !Gate::allows('update', $record)),
                 Tables\Actions\Action::make('approve')
                     ->action(fn(Comment $record) => $record->update(['status' => 'approved']))
                     ->icon('heroicon-o-check')
                     ->color('success')
-                    ->visible(fn(Comment $record) => $record->status !== 'approved'),
+                    ->visible(fn(Comment $record) => Gate::allows('approve', $record)),
                 Tables\Actions\Action::make('reject')
                     ->action(fn(Comment $record) => $record->update(['status' => 'rejected']))
                     ->icon('heroicon-o-x-mark')
                     ->color('danger')
-                    ->visible(fn(Comment $record) => $record->status !== 'rejected'),
+                    ->visible(fn(Comment $record) => Gate::allows('reject', $record)),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                    Tables\Actions\ForceDeleteBulkAction::make(),
-                    Tables\Actions\RestoreBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->hidden(fn(): bool => !Gate::allows('delete', Comment::class)),
+                    Tables\Actions\ForceDeleteBulkAction::make()
+                        ->hidden(fn(): bool => !Gate::allows('forceDelete', Comment::class)),
+                    Tables\Actions\RestoreBulkAction::make()
+                        ->hidden(fn(): bool => !Gate::allows('restore', Comment::class)),
                 ]),
             ]);
     }

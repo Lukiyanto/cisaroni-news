@@ -47,6 +47,12 @@ class Navigation
                 ->icon('heroicon-o-hashtag')
                 ->url(TagResource::getUrl())
                 ->isActiveWhen(fn(): bool => request()->routeIs('filament.admin.resources.tags.*'));
+
+            // Komentar
+            $contentItems[] = NavigationItem::make('Komentar')
+                ->icon('heroicon-o-chat-bubble-left-ellipsis')
+                ->url(CommentResource::getUrl())
+                ->isActiveWhen(fn(): bool => request()->routeIs('filament.admin.resources.comments.*'));
         }
 
         // Menu Pengaturan
