@@ -97,8 +97,18 @@ class User extends Authenticatable
         return in_array($this->role, ['admin', 'editor']);
     }
 
+    public function onlyEditor()
+    {
+        return $this->role === 'editor';
+    }
+
     public function isAuthor()
     {
         return $this->role === 'author';
+    }
+
+    public function allRole()
+    {
+        return in_array($this->role, ['admin', 'editor', 'author']);
     }
 }

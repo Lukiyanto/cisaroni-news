@@ -23,8 +23,7 @@ class ArticlePolicy
      */
     public function view(User $user, Article $article)
     {
-        return $user->isAdmin()
-            || $user->isEditor()
+        return $user->isEditor()
             || $article->user_id === $user->id;
     }
 
@@ -33,7 +32,7 @@ class ArticlePolicy
      */
     public function create(User $user)
     {
-        return in_array($user->role, ['admin', 'editor', 'author']);
+        return $user->allRole();
     }
 
     /**
@@ -41,8 +40,7 @@ class ArticlePolicy
      */
     public function update(User $user, Article $article)
     {
-        return $user->isAdmin()
-            || $user->isEditor()
+        return $user->isEditor()
             || $article->user_id === $user->id;
     }
 
@@ -52,7 +50,7 @@ class ArticlePolicy
     public function delete(User $user, Article $article)
     {
         return $user->isAdmin()
-            || ($user->isEditor() && $article->user_id === $user->id) // Editor dapat menghapus artikel miliknya sendiri, jika ingin Editor dapat menghapus artikel orang lain kecuali miliknya gunakan (!==)
+            || ($user->onlyEditor() && $article->user_id === $user->id) // Editor dapat menghapus artikel miliknya sendiri, jika ingin Editor dapat menghapus artikel orang lain kecuali miliknya gunakan (!==)
             || $article->user_id === $user->id; // Author dapat menghapus artikel miliknya sendiri
     }
 
